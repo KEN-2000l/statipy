@@ -127,3 +127,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# spotify data files
+*.zip
+MyData/
+/MyData/
