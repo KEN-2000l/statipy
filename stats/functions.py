@@ -4,7 +4,7 @@ import datetime
 
 def play_time(streaming_history,
               start_date: time.struct_time = None,
-              end_date: time.struct_time = None)  -> datetime.timedelta:
+              end_date: time.struct_time = None) -> datetime.timedelta:
     if start_date is None:
         start_date = time.gmtime(0)
     if end_date is None:
