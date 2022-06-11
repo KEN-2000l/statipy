@@ -1,8 +1,28 @@
-from typing import Optional
+from dataclasses import dataclass
+from datetime import timedelta
 from os import listdir
+from typing import Optional
+
+from time import strptime
+
+from .types import History, PlayList
+
+
+@dataclass
+class _MyLibrary:
+    liked_songs: list
+    liked_albums: list
+    liked_shows: list
+    liked_episodes: list
+    following_artists: list
 
 
 class MyData:
+    _streaming_history: list[History]
+    _playlists: list[PlayList]
+    _user: None
+    _library: _MyLibrary
+
     def __init__(self, root_path: Optional[str] = None):
         self._root = 'MyData/' if root_path is None else root_path
 
@@ -39,6 +59,11 @@ class MyData:
             with open(self._root + file, encoding='UTF-8') as f:
                 all_ += eval(f.read())
 
+        # Convert string timestamps to time objects
+        for h in all_:
+            h['endTime'] = strptime(h['endTime'], '%Y-%m-%d %H:%M')
+            h['msPlayed'] = timedelta(milliseconds=h['msPlayed'])
+
         return all_
 
     def _load_playlists(self):
@@ -50,6 +75,12 @@ class MyData:
             with open(self._root + file, encoding='UTF-8') as f:
                 all_ += eval(f.read().replace('null', 'None'))['playlists']
 
+        # Convert string timestamps to time objects
+        for p in all_:
+            p['lastModifiedDate'] = strptime(p['lastModifiedDate'], '%Y-%m-%d')
+            for i in p['items']:
+                i['addedDate'] = strptime(i['addedDate'], '%Y-%m-%d')
+
         return all_
 
     def _load_my_library(self):
@@ -57,12 +88,3 @@ class MyData:
             all_ = eval(f.read())
 
         return all_['tracks'], all_['albums'], all_['shows'], all_['episodes'], all_['artists']
-
-
-class _MyLibrary:
-    def __init__(self, songs, albums, shows, episodes, artists):
-        self.liked_songs = songs
-        self.liked_albums = albums
-        self.liked_shows = shows
-        self.liked_episodes = episodes
-        self.following_artists = artists
