@@ -1,26 +1,46 @@
-import time
-import datetime
+from datetime import timedelta
+
+from time import gmtime, struct_time
+
+from filemgr.types import History
 
 
-def play_time(streaming_history,
-              start_date: time.struct_time = None,
-              end_date: time.struct_time = None) -> datetime.timedelta:
-    if start_date is None:
-        start_date = time.gmtime(0)
-    if end_date is None:
-        end_date = time.gmtime()
-
-    total_ms = 0
+def play_time(streaming_history: list[History],
+              start_date: struct_time = gmtime(0),
+              end_date: struct_time = gmtime()) -> timedelta:
+    """
+    calculates total listening time between (optionally) specified time ranges
+    no start/end time specified will use the earliest/latest dates in history
+    """
+    total_time = timedelta()
     for i in streaming_history:
-        stamp = time.strptime(i['endTime'], '%Y-%m-%d %H:%M')
-        if start_date <= stamp <= end_date:
-            total_ms += i['msPlayed']
+        if start_date <= i['endTime'] <= end_date:
+            total_time += i['msPlayed']
 
-    return datetime.timedelta(milliseconds=total_ms)
+    return total_time
 
 
-def history_range(streaming_history) -> tuple[time.struct_time, time.struct_time]:
-    start = time.strptime(streaming_history[0]['endTime'], '%Y-%m-%d %H:%M')
-    end = time.strptime(streaming_history[-1]['endTime'], '%Y-%m-%d %H:%M')
+def history_range(streaming_history: list[History]) -> tuple[struct_time, struct_time]:
+    """
+    find the time range the streaming history covers;
+    returns tuple of the earliest and latest dates
+    """
+    return streaming_history[0]['endTime'], streaming_history[-1]['endTime']
 
-    return start, end
+
+def play_counts(streaming_history: list[History]) -> dict[History, int]:
+    """
+    Generates dictionary with unique artist-track-name keys and number of times played as values
+
+    :return: descending sorted dictionary by play count
+    """
+    result = {}
+    for i in streaming_history:
+        key = f"{i['artistName']} - {i['trackName']}"
+        if key not in result:
+            result[key] = 0
+        result[key] += 1
+
+    sort = {k: result[k] for k in sorted(result, key=result.get, reverse=True)}
+
+    return sort
